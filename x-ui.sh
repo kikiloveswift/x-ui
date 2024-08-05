@@ -425,7 +425,7 @@ ssl_cert_issue() {
     local method=""
     echo -E ""
     LOGD "******使用说明******"
-    LOGI "该脚本提供两种方式实现证书签发,证书安装路径均为/root/cert"
+    LOGI "该脚本提供两种方式实现证书签发,证书安装路径均为/etc/x-ui"
     LOGI "方式1:acme standalone mode,需要保持端口开放"
     LOGI "方式2:acme DNS API mode,需要提供Cloudflare Global API Key"
     LOGI "如域名属于免费域名,则推荐使用方式1进行申请"
@@ -479,7 +479,7 @@ ssl_cert_issue_standalone() {
         LOGI "socat安装成功..."
     fi
     #creat a directory for install cert
-    certPath=/root/cert
+    certPath=/etc/x-ui
     if [ ! -d "$certPath" ]; then
         mkdir $certPath
     fi
@@ -516,9 +516,9 @@ ssl_cert_issue_standalone() {
         LOGI "证书申请成功,开始安装证书..."
     fi
     #install cert
-    ~/.acme.sh/acme.sh --installcert -d ${domain} --ca-file /root/cert/ca.cer \
-        --cert-file /root/cert/${domain}.cer --key-file /root/cert/${domain}.key \
-        --fullchain-file /root/cert/fullchain.cer
+    ~/.acme.sh/acme.sh --installcert -d ${CF_Domain} -d *.${CF_Domain} --ca-file ${certPath}/ca.cer \
+            --cert-file ${certPath}/${CF_Domain}.cer --key-file ${certPath}/server.key \
+            --fullchain-file ${certPath}/server.crt
 
     if [ $? -ne 0 ]; then
         LOGE "证书安装失败,脚本退出"
@@ -549,7 +549,7 @@ ssl_cert_issue_by_cloudflare() {
     LOGI "1.知晓Cloudflare 注册邮箱"
     LOGI "2.知晓Cloudflare Global API Key"
     LOGI "3.域名已通过Cloudflare进行解析到当前服务器"
-    LOGI "4.该脚本申请证书默认安装路径为/root/cert目录"
+    LOGI "4.该脚本申请证书默认安装路径为/etc/x-ui目录"
     confirm "我已确认以上内容[y/n]" "y"
     if [ $? -eq 0 ]; then
         install_acme
@@ -560,7 +560,7 @@ ssl_cert_issue_by_cloudflare() {
         CF_Domain=""
         CF_GlobalKey=""
         CF_AccountEmail=""
-        certPath=/root/cert
+        certPath=/etc/x-ui
         if [ ! -d "$certPath" ]; then
             mkdir $certPath
         fi
@@ -598,9 +598,9 @@ ssl_cert_issue_by_cloudflare() {
         else
             LOGI "证书签发成功,安装中..."
         fi
-        ~/.acme.sh/acme.sh --installcert -d ${CF_Domain} -d *.${CF_Domain} --ca-file /root/cert/ca.cer \
-            --cert-file /root/cert/${CF_Domain}.cer --key-file /root/cert/${CF_Domain}.key \
-            --fullchain-file /root/cert/fullchain.cer
+        ~/.acme.sh/acme.sh --installcert -d ${CF_Domain} -d *.${CF_Domain} --ca-file ${certPath}/ca.cer \
+            --cert-file ${certPath}/${CF_Domain}.cer --key-file ${certPath}/server.key \
+            --fullchain-file ${certPath}/server.crt
         if [ $? -ne 0 ]; then
             LOGE "证书安装失败,脚本退出"
             rm -rf ~/.acme.sh/${CF_Domain}
